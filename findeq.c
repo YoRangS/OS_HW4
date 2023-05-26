@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include <signal.h>
 
+#define BUFFER_SIZE 1024
+
 typedef struct _fileList {
     long size;
     char* path;
@@ -15,12 +17,83 @@ typedef struct _fileList {
 fileList fl_head = {0, 0x0, 0x0};
 fileList * fl_last = 0x0;
 
+typedef struct Data {
+    char* path;
+    struct Data* next;
+} Data;
+
+Data data_head = {0x0, 0x0};
+
 // SIGINT Signal (when user presses CTRL+C)
 void handleSIGINT(int sig)
 {
     printf("\nSIGINT signal received. Finishing program...\n");
     // Perform any necessary cleanup operations here
     exit(0);
+}
+
+void appendFL(fileList** head, long num, char* str) {
+    fileList* new_file = (fileList *)malloc(sizeof(fileList));
+    new_file->path = (char *)malloc((strlen(str)+1) * sizeof(char));
+    new_file->size = num;
+    strcpy(new_file->path, str);
+    new_file->next = 0x0;
+
+    if(*head == 0x0) {
+        *head = new_file;
+        return;
+    }
+
+    fileList* curr_file = *head;
+    while (curr_file->next != NULL) {
+        curr_file = curr_file->next;
+    }
+    curr_file->next = new_file;
+}
+
+void freeFL(fileList** head) {
+    fileList * itr = 0x0;
+    if (*head == fl_head.next) {
+        itr = &fl_head;
+    }
+    else {
+        itr = fl_head.next;
+        while (itr->next != *head) {
+            itr = itr->next;
+        }
+    }
+    fileList * fl = (*head)->next;
+    free((*head)->path);
+    free(*head);
+    itr->next = fl;
+}
+
+void appendData(Data** head, char* str) {
+    Data* new_data = (Data *)malloc(sizeof(Data));
+    new_data->path = (char *)malloc((strlen(str)+1) * sizeof(char));
+    strcpy(new_data->path, str);
+    new_data->next = 0x0;
+
+    if(*head == 0x0) {
+        *head = new_data;
+        return;
+    }
+
+    Data* curr_data = *head;
+    while (curr_data->next != NULL) {
+        curr_data = curr_data->next;
+    }
+    curr_data->next = new_data;
+}
+
+void freeData(Data* head) {
+    Data* curr_data = head;
+    while (curr_data != 0x0) {
+        Data* next = curr_data->next;
+        free(curr_data->path);
+        free(curr_data);
+        curr_data = next;
+    }
 }
 
 void scanDir(const char *path, int minimum_size) {
@@ -59,19 +132,7 @@ void scanDir(const char *path, int minimum_size) {
             long fileSize = ftell(file);
 
             if (fileSize >= minimum_size) {  // Files smaller than -m, non-regular files! are filtered here
-                fileList * curr_file = (fileList *)malloc(sizeof(fileList));
-                if (fl_last == 0x0) {       // Also fl_head.next == 0x0
-                    // printf("fl_last == 0x0 %p\n", curr_file);
-                    fl_head.next = curr_file;
-                }
-                else {
-                    // printf("fl_last != 0x0\n");
-                    fl_last->next = curr_file;
-                }
-                fl_last = curr_file;
-                curr_file->size = fileSize;
-                curr_file->path = filePath;
-                curr_file->next = 0x0;
+                appendFL(&fl_head.next, fileSize, filePath);
             }
 
             // printf("fileSize: %ld / filePath: %s\n", fileSize, filePath);
@@ -80,6 +141,62 @@ void scanDir(const char *path, int minimum_size) {
     }
 
     closedir(dir);
+}
+
+void compareFile() {
+    FILE *std, *file;
+    while (fl_head.next != 0x0) {
+        printf("debug: %s\n", fl_head.next->path);
+        std = fopen(fl_head.next->path, "rb");
+        if(std == NULL) {
+            perror("std");
+        }
+
+        int isSame = -1;
+        fileList * curr_file = fl_head.next->next;
+        while (curr_file != 0x0) {
+            printf("debug 2: %s\n", curr_file->path);
+            file = fopen(curr_file->path, "rb");
+            if(file == NULL) {
+                perror("file");
+            }
+
+            if (fl_head.next->size != curr_file->size) {
+                fclose(file);
+                curr_file = curr_file->next;
+                continue;
+            }
+
+            char buffer1[BUFFER_SIZE];
+            char buffer2[BUFFER_SIZE];
+            size_t bytesRead1, bytesRead2;
+
+            while ((bytesRead1 = fread(buffer1, sizeof(char), BUFFER_SIZE, std)) > 0 &&
+                (bytesRead2 = fread(buffer2, sizeof(char), BUFFER_SIZE, file)) > 0) {
+                if (memcmp(buffer1, buffer2, bytesRead1) != 0) {
+                    isSame = 0;
+                    break;
+                }
+            }
+
+            if (isSame != 0) {
+                printf("Same!!\n");
+                if (isSame == -1) {
+                    appendData(&data_head.next, fl_head.next->path);
+                }
+                appendData(&data_head.next, curr_file->path);
+                freeFL(&curr_file);
+            }
+
+            isSame = 1;
+            curr_file = curr_file->next;
+
+            fclose(file);
+        }
+
+        freeFL(&fl_head.next);
+        fclose(std);
+    }
 }
 
 int main(int argc, char* argv[])
@@ -141,7 +258,7 @@ int main(int argc, char* argv[])
                 printf("---------------------------------\n\n");
                 /*---------------------------------------*/
 
-    
+    compareFile();
 
     // Finish program (free, ...)
 
