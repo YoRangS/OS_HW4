@@ -24,7 +24,7 @@ void handleSIGINT(int sig)
 }
 
 void scanDir(const char *path, int minimum_size) {
-    printf("Enter scanDir\n");
+    // printf("Enter scanDir\n");
     DIR *dir;
     struct dirent *entry;
     struct stat info;
@@ -61,22 +61,21 @@ void scanDir(const char *path, int minimum_size) {
             if (fileSize >= minimum_size) {  // Files smaller than -m, non-regular files! are filtered here
                 fileList * curr_file = (fileList *)malloc(sizeof(fileList));
                 if (fl_last == 0x0) {       // Also fl_head.next == 0x0
-                    printf("fl_last == 0x0\n");
+                    // printf("fl_last == 0x0 %p\n", curr_file);
                     fl_head.next = curr_file;
-                    fl_last->next = curr_file;
                 }
                 else {
-                    printf("fl_last != 0x0\n");
+                    // printf("fl_last != 0x0\n");
                     fl_last->next = curr_file;
-                    fl_last = curr_file;
                 }
+                fl_last = curr_file;
                 curr_file->size = fileSize;
-                strcpy(curr_file->path, filePath);
+                curr_file->path = filePath;
                 curr_file->next = 0x0;
             }
 
-            printf("fileSize: %ld / filePath: %s\n", fileSize, filePath);
-            printf("%p\t\t%p\n", fl_head.next, fl_last);
+            // printf("fileSize: %ld / filePath: %s\n", fileSize, filePath);
+            // printf("%p\t\t%p\n", fl_head.next, fl_last);
         }
     }
 
@@ -116,12 +115,14 @@ int main(int argc, char* argv[])
     }
     dir_path = strdup(argv[argc - 1]);
 
-    /*----------------debug------------------*/
-    printf("thread_num : %d\n", thread_num);
-    printf("minimum_size : %d\n", minimum_size);
-    printf("file_name : %s\n", file_name);
-    printf("dir_path : %s\n", dir_path);
-    /*---------------------------------------*/
+                /*----------------debug------------------*/
+                printf("---------------------------------\n");
+                printf("thread_num : %d\n", thread_num);
+                printf("minimum_size : %d\n", minimum_size);
+                printf("file_name : %s\n", file_name);
+                printf("dir_path : %s\n", dir_path);
+                printf("---------------------------------\n\n");
+                /*---------------------------------------*/
 
     // Initiate thread and etc
     
@@ -130,11 +131,17 @@ int main(int argc, char* argv[])
     const char *directoryPath = dir_path;
     scanDir(directoryPath, minimum_size);
 
-    fileList * itr;
-    int i;
-    for (itr = fl_head.next, i=0; itr != 0x0; itr = itr->next, i++) {
-        printf("[%d] %s (Size: %ld)\n", i, itr->path, itr->size);
-    }
+                /*----------------debug------------------*/
+                printf("---------------------------------\n");
+                fileList * itr;
+                int i;
+                for (itr = fl_head.next, i=0; itr != 0x0; itr = itr->next, i++) {
+                    printf("[%d] %s (Size: %ld)\n", i, itr->path, itr->size);
+                }
+                printf("---------------------------------\n\n");
+                /*---------------------------------------*/
+
+    
 
     // Finish program (free, ...)
 
