@@ -115,6 +115,38 @@ void printData(Data* head) {
     // }
 }
 
+void data2File(Data* head, char* name) {
+    FILE * newFile;
+    newFile = fopen(name, "w");
+    if (newFile == NULL) {
+        perror("write");
+        return;
+    }
+
+    fprintf(newFile, "[\n");
+    if (head != 0x0) fprintf(newFile, "  [\n");
+    Data* curr_data = head;
+    while (curr_data != 0x0) {
+        if (strcmp(curr_data->path, "<>") == 0) {
+            fprintf(newFile, "  ]");
+            if (curr_data->next != 0x0) {
+                fprintf(newFile, ",\n  [\n");
+            } 
+        }
+        else {
+            fprintf(newFile, "    %s", curr_data->path);
+            if (!(curr_data->next == 0x0 || strcmp(curr_data->next->path, "<>") == 0))
+                fprintf(newFile, ",");
+            fprintf(newFile, "\n");
+        }
+        curr_data = curr_data->next;
+    }
+    if (head != 0x0) fprintf(newFile, "  ]\n");
+    fprintf(newFile, "]");
+
+    fclose(newFile);
+}
+
 void freeData(Data* head) {
     Data* curr_data = head;
     while (curr_data != 0x0) {
@@ -285,14 +317,14 @@ int main(int argc, char* argv[])
     }
     dir_path = strdup(argv[argc - 1]);
 
-                /*----------------debug------------------*//*
-                printf("---------------------------------\n");
-                printf("thread_num : %d\n", thread_num);
-                printf("minimum_size : %d\n", minimum_size);
-                printf("file_name : %s\n", file_name);
-                printf("dir_path : %s\n", dir_path);
-                printf("---------------------------------\n\n");
-                *//*---------------------------------------*/
+                /*----------------debug------------------*/
+                // printf("---------------------------------\n");
+                // printf("thread_num : %d\n", thread_num);
+                // printf("minimum_size : %d\n", minimum_size);
+                // printf("file_name : %s\n", file_name);
+                // printf("dir_path : %s\n", dir_path);
+                // printf("---------------------------------\n\n");
+                /*---------------------------------------*/
 
     // Initiate thread and etc
     
@@ -301,20 +333,24 @@ int main(int argc, char* argv[])
     const char *directoryPath = dir_path;
     scanDir(directoryPath, minimum_size);
 
-                /*----------------debug------------------*//*
-                printf("---------------------------------\n");
-                fileList * itr;
-                int i;
-                for (itr = fl_head.next, i=0; itr != 0x0; itr = itr->next, i++) {
-                    printf("[%d] %s (Size: %ld)\n", i, itr->path, itr->size);
-                }
-                printf("---------------------------------\n\n");
-                *//*---------------------------------------*/
+                /*----------------debug------------------*/
+                // printf("---------------------------------\n");
+                // fileList * itr;
+                // int i;
+                // for (itr = fl_head.next, i=0; itr != 0x0; itr = itr->next, i++) {
+                //     printf("[%d] %s (Size: %ld)\n", i, itr->path, itr->size);
+                // }
+                // printf("---------------------------------\n\n");
+                /*---------------------------------------*/
 
     compareFile();
 
-    printData(data_head.next);
-
+    if (file_name == 0x0) {
+        printData(data_head.next);
+    }
+    else {
+        data2File(data_head.next, file_name);
+    }
     // Finish program (free, ...)
 
     return 0;

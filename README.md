@@ -8,3 +8,9 @@ Operating System HW4
 ```
 ./findeq -m=1200 ./File
 ```
+```
+./findeq -o=new ./File
+```
+```
+./findeq -o=new2 -m=1200 ./File
+```
