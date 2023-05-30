@@ -16,7 +16,7 @@ typedef struct _fileList {
 } fileList;
 
 fileList fl_head = {0, 0x0, 0x0};
-fileList * fl_last = 0x0;
+// fileList * fl_last = 0x0;
 
 typedef struct Data {
     char* path;
@@ -29,6 +29,7 @@ pthread_mutex_t lock ;
 
 typedef struct _subtask {
     fileList * fl_head;
+    Data * d_head;
 } subtask;
 
 pthread_mutex_t lock_n_threads ;
@@ -99,13 +100,15 @@ void appendFL(fileList** head, long num, char* str) {
     curr_file->next = new_file;
 }
 
-void freeFL(fileList** head) {
+void freeFL(fileList** head, fileList** first) {
     fileList * itr = 0x0;
-    if (*head == fl_head.next) {
-        itr = &fl_head;
+    printf("%p vs %p\n", *head, (*first)->next);
+    printf("%s vs %s\n", (*head)->path, (*first)->next->path);
+    if (*head == (*first)->next) {
+        itr = *first;
     }
     else {
-        itr = fl_head.next;
+        itr = (*first)->next;
         while (itr->next != *head) {
             itr = itr->next;
         }
@@ -117,6 +120,7 @@ void freeFL(fileList** head) {
 }
 
 void appendData(Data** head, char* str) {
+    printf("********%p\n", *head);
     Data* new_data = (Data *)malloc(sizeof(Data));
     new_data->path = (char *)malloc((strlen(str)+1) * sizeof(char));
     strcpy(new_data->path, str);
@@ -129,6 +133,8 @@ void appendData(Data** head, char* str) {
 
     Data* curr_data = *head;
     while (curr_data->next != NULL) {
+        printf("BBBBBBBBBBBBBBB\n");
+        printf("%s\n", curr_data->path);
         curr_data = curr_data->next;
     }
     curr_data->next = new_data;
@@ -258,10 +264,16 @@ void compareFile(fileList * fl, Data * data) {
     // Data * d_head;
     // memcpy(f_head, fl, sizeof(fileList *));
     // memcpy(d_head, data, sizeof(Data *));
-    printf("    cmpfile (%p) (%p)\n", fl, fl->next);
-
+    printf("    cmpfile (%p) (%p) (%s)\n", fl, fl->next, fl->next->path);
+    printf("    cmpfile (%p) (%p) (%s)\n", data, data->next, data->path);
+    if(fl == NULL) {
+        printf("        NULL!!\n");
+        return;
+    }
+    
     while (fl->next != 0x0) {
-        // printf("debug: %p\n", fl->next->path);
+        printf("debug: %p\n", fl->next);
+        printf("debug: %s\n", fl->next->path);
         std = fopen(fl->next->path, "rb");
         if(std == NULL) {
             perror("std");
@@ -271,7 +283,7 @@ void compareFile(fileList * fl, Data * data) {
         int wasSame = 0;
         fileList * curr_file = fl->next->next;
         while (curr_file != 0x0) {
-            // printf("debug 2: %s\n", curr_file->path);
+            printf("debug 2: %s\n", curr_file->path);
             fileList* next = curr_file->next;
 
             file = fopen(curr_file->path, "rb");
@@ -308,13 +320,16 @@ void compareFile(fileList * fl, Data * data) {
                 printf("************Same!!\n");
                 pthread_mutex_lock(&lock) ;
                 if (isSame == -1) {
+                    printf("%s\n", fl->next->path);
+                    printf("%p %p\n", data, data->next);
+                    printf("%s\n", data->path);
                     appendData(&data->next, fl->next->path);
                     printf("************fl->next->path: %s\n", fl->next->path);
                 }
                 appendData(&data->next, curr_file->path);
                 printf("************curr_file->path: %s\n", curr_file->path);
                 pthread_mutex_unlock(&lock) ;
-                freeFL(&curr_file);
+                freeFL(&curr_file, &fl);
             }
 
             isSame = 1;
@@ -322,17 +337,21 @@ void compareFile(fileList * fl, Data * data) {
 
             fclose(file);
         }
+        
         pthread_mutex_lock(&lock) ;
         if (wasSame) {
             appendData(&data->next, "<>");
         }
-        freeFL(&fl->next);
+        printf("((%p))\n", fl->next);
+        freeFL(&fl->next, &fl);
+        printf("((%p))\n", fl->next);
+        printf("    CCCCCCCCCCCCCCC\n");
         pthread_mutex_unlock(&lock) ;
         fclose(std);
     }
     printf("after cmpfile\n");
 
-    Data* curr_data = data_head.next;
+    Data* curr_data = data->next;
     pthread_mutex_lock(&lock) ;
     if (curr_data != 0x0) {
         while (curr_data->next->next != 0x0) {
@@ -348,20 +367,10 @@ void compareFile(fileList * fl, Data * data) {
 void * travel (void * arg) {
     subtask * s = (subtask *) arg ;
 
-    // fileList f_head; Data d_head;
-    // f_head.next = NULL; d_head.next = NULL;
-    // f_head.path = NULL; d_head.path = NULL;
-    // f_head.size = s->fl_head->size;
-    // strcpy(f_head.path, s->fl_head->path);
-    // printf("    %p\n",s);
-    // f_head.next = s->fl_head->next;
-    // strcpy(d_head.path, s->data_head->path);
-    // d_head.next = s->data_head->next;
-
     printf("start travel, before cmpfile %p\n", s->fl_head);
     // compareFile(&f_head, &d_head);
     
-    compareFile(s->fl_head, &data_head);
+    compareFile(s->fl_head, s->d_head);
     free(arg);
     return NULL;
 }
@@ -380,14 +389,36 @@ void * worker (void * arg)
 
 void init_subtask() {
     for(int i = 0; i < thread_num; i++) {
+        printf("check: (%p)\n", &fl_head);
         subtask * s = (subtask *)malloc(sizeof(subtask)) ;
         s->fl_head = (fileList*)malloc(sizeof(fileList)) ;
-        printf("check: (%p)\n", &fl_head);
+        s->d_head->path = "";
+        s->d_head->next = 0x0;
+        printf("&&&&&&&&s->d_head: %p\n", s->d_head);
+        printf("&&&&&&&&s->d_head->next: %p\n", s->d_head->next);
+        // s->d_head = (Data*)malloc(sizeof(Data));
         // s->fl_head = &fl_head;
-        memcpy(s->fl_head, &fl_head, sizeof(fileList*));
+        // memcpy(s->fl_head, &fl_head, sizeof(fileList*));
         // s->fl_head->next = fl_head.next;
+        printf("WHATTTT %p %p\n", &fl_head, fl_head.next);
+        fileList * itr = fl_head.next;
+        while(itr != 0x0) {
+            printf("&&&&&&&&s->d_head->next: %p\n", s->d_head->next);
+            appendFL(&(s->fl_head), itr->size, itr->path);
+            itr = itr->next;
+        }
+        // itr = fl_head.next;
+        // while(itr != 0x0) {
+        //     printf("size: %ld\tpath: %s\n",itr->size, itr->path);
+        //     itr = itr->next;
+        // }
+        // printf("AAAAAAAAAAAAAAA\n");
+        // appendData(&(s->d_head), "");
+        // printf("AAAAAAAAAAAAAAA\n");
         
-        printf("init: (%p) (s:%p)\n", s->fl_head, s);
+        printf("init: (%p) (s:%p) (%p)\n", s->fl_head, s, s->fl_head->next);
+        printf("init: (%s)\n", s->fl_head->next->path);
+        printf("init: (%p) (%p)\n", s->d_head, s->d_head->next);
         put_subtask(s);
     }
 }
@@ -468,7 +499,7 @@ int main(int argc, char* argv[])
     // Finish program (free, ...)
     free(threads);
     while(fl_head.next != 0x0) {
-        freeFL(&fl_head.next);
+        freeFL(&fl_head.next, &fl_head.next);
     }
     freeData(data_head.next);
 
