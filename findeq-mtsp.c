@@ -103,7 +103,7 @@ void appendFL(fileList** head, long num, char* str) {
 void freeFL(fileList** head, fileList** first) {
     fileList * itr = 0x0;
     printf("%p vs %p\n", *head, (*first)->next);
-    printf("%s vs %s\n", (*head)->path, (*first)->next->path);
+    // printf("%s vs %s\n", (*head)->path, (*first)->next->path);
     if (*head == (*first)->next) {
         itr = *first;
     }
@@ -114,8 +114,8 @@ void freeFL(fileList** head, fileList** first) {
         }
     }
     fileList * fl = (*head)->next;
-    free((*head)->path);
     free(*head);
+    *head = NULL;
     itr->next = fl;
 }
 
@@ -371,6 +371,11 @@ void * travel (void * arg) {
     // compareFile(&f_head, &d_head);
     
     compareFile(s->fl_head, s->d_head);
+
+    // s --> global
+    fl_head.next = s->fl_head;
+    data_head.next = s->d_head;
+
     free(arg);
     return NULL;
 }
@@ -392,29 +397,15 @@ void init_subtask() {
         printf("check: (%p)\n", &fl_head);
         subtask * s = (subtask *)malloc(sizeof(subtask)) ;
         s->fl_head = (fileList*)malloc(sizeof(fileList)) ;
+        s->d_head = (Data*)malloc(sizeof(Data));
         s->d_head->path = "";
         s->d_head->next = 0x0;
-        printf("&&&&&&&&s->d_head: %p\n", s->d_head);
-        printf("&&&&&&&&s->d_head->next: %p\n", s->d_head->next);
-        // s->d_head = (Data*)malloc(sizeof(Data));
-        // s->fl_head = &fl_head;
-        // memcpy(s->fl_head, &fl_head, sizeof(fileList*));
-        // s->fl_head->next = fl_head.next;
-        printf("WHATTTT %p %p\n", &fl_head, fl_head.next);
+        printf("%p\n", s->fl_head);
         fileList * itr = fl_head.next;
         while(itr != 0x0) {
-            printf("&&&&&&&&s->d_head->next: %p\n", s->d_head->next);
             appendFL(&(s->fl_head), itr->size, itr->path);
             itr = itr->next;
         }
-        // itr = fl_head.next;
-        // while(itr != 0x0) {
-        //     printf("size: %ld\tpath: %s\n",itr->size, itr->path);
-        //     itr = itr->next;
-        // }
-        // printf("AAAAAAAAAAAAAAA\n");
-        // appendData(&(s->d_head), "");
-        // printf("AAAAAAAAAAAAAAA\n");
         
         printf("init: (%p) (s:%p) (%p)\n", s->fl_head, s, s->fl_head->next);
         printf("init: (%s)\n", s->fl_head->next->path);
@@ -498,10 +489,15 @@ int main(int argc, char* argv[])
 
     // Finish program (free, ...)
     free(threads);
+    fileList * tmp = (fileList*)malloc(sizeof(fileList));
+    tmp->next = NULL;
     while(fl_head.next != 0x0) {
-        freeFL(&fl_head.next, &fl_head.next);
+        // printf("freeeeeee\n");
+        tmp->next = fl_head.next;
+        freeFL(&fl_head.next, &tmp);
     }
-    freeData(data_head.next);
+    // printf("freeeeeee\n");
+    // freeData(data_head.next);
 
     return 0;
 }
