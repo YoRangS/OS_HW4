@@ -14,3 +14,8 @@ Operating System HW4
 ```
 ./findeq -o=new2 -m=1200 ./File
 ```
+- - -
+```
+gcc -pthread findeq-mtsp.c -o findeq-mtsp
+./findeq-mtsp ./File
+```
