@@ -504,6 +504,9 @@ int main(int argc, char* argv[])
     sem_destroy(&unused);
     sem_destroy(&inused);
     pthread_mutex_destroy(&lock);
+    pthread_mutex_destroy(&time_lock);
+    pthread_mutex_destroy(&scan_lock);
+    pthread_mutex_destroy(&dup_lock);
     pthread_mutex_destroy(&lock_n_threads);
     pthread_mutex_destroy(&subtasks_lock);
 
