@@ -169,8 +169,8 @@ void data2File(Data* head, char* name) {
     Data* curr_data = head;
     while (curr_data != 0x0) {
         if (strcmp(curr_data->path, "<>") == 0) {
-            fprintf(newFile, "  ]");
             if (curr_data->next != 0x0) {
+                fprintf(newFile, "  ]");
                 fprintf(newFile, ",\n  [\n");
             } 
         }
