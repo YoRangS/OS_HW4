@@ -49,34 +49,34 @@ char* dir_path;
 
 void put_subtask (subtask * s) 
 {
-    printf("    [put_subtask] START (tail = %d) s (%p)\n", tail, s);
-    printf("~~~~~~~~~~~~~~~~semwait UNused\n");
+    // printf("    [put_subtask] START (tail = %d) s (%p)\n", tail, s);
+    // printf("~~~~~~~~~~~~~~~~semwait UNused\n");
 	sem_wait(&unused) ;
 	pthread_mutex_lock(&subtasks_lock) ;
-    printf("        [put_subtask] (tail = %d)\n", tail);
+    // printf("        [put_subtask] (tail = %d)\n", tail);
 		subtasks[tail] = s ;
 		tail = (tail + 1) % thread_num ;
-    printf("~~~~~~~~~~~~~~~~sempost INused\n");
+    // printf("~~~~~~~~~~~~~~~~sempost INused\n");
 	pthread_mutex_unlock(&subtasks_lock) ;
 	sem_post(&inused) ;
-    printf("    [put_subtask] END (tail = %d)\n", tail);
+    // printf("    [put_subtask] END (tail = %d)\n", tail);
 }
 
 subtask * get_subtask () 
 {
-    printf("    [get_subtask] START (head = %d)\n", head);
+    // printf("    [get_subtask] START (head = %d)\n", head);
 	subtask * s ;
-    printf("~~~~~~~~~~~~~~~~semwait INused\n");
+    // printf("~~~~~~~~~~~~~~~~semwait INused\n");
 	sem_wait(&inused) ;
 	pthread_mutex_lock(&subtasks_lock) ;
-        printf("        [get_subtask] (head = %d)\n", head);
+        // printf("        [get_subtask] (head = %d)\n", head);
 		s = subtasks[head] ;
 		head = (head + 1) % thread_num ;
-    printf("~~~~~~~~~~~~~~~~sempost UNused\n");
+    // printf("~~~~~~~~~~~~~~~~sempost UNused\n");
 	pthread_mutex_unlock(&subtasks_lock) ;
 	sem_post(&unused) ;
 
-    printf("    [get_subtask] END (head = %d) s (%p)\n", head, s);
+    // printf("    [get_subtask] END (head = %d) s (%p)\n", head, s);
 	return s ;
 }
 
@@ -109,7 +109,7 @@ void appendFL(fileList** head, long num, char* str) {
 
 void freeFL(fileList** head, fileList** first) {
     fileList * itr = 0x0;
-    printf("[freeFL] head(%p) vs *first->next(%p)\n", *head, (*first)->next);
+    // printf("[freeFL] head(%p) vs *first->next(%p)\n", *head, (*first)->next);
     // printf("%s vs %s\n", (*head)->path, (*first)->next->path);
     if (*head == (*first)->next) {
         itr = *first;
@@ -274,7 +274,7 @@ void compareFile(fileList * fl, Data * data) {
     // printf("[compareFile] f(%p) f->n(%p) f->n->p(%s)\n", fl, fl->next, fl->next->path);
     // printf("[compareFile] d(%p) d->n(%p) d->p   (%s)\n", data, data->next, data->path);
     if(fl == NULL) {
-        printf("        NULL!!\n");
+        // printf("        NULL!!\n");
         return;
     }
     
@@ -321,16 +321,16 @@ void compareFile(fileList * fl, Data * data) {
                     break;
                 }
             }
-            printf("[compareFile] <3> isSame = %d\n", isSame);
+            // printf("[compareFile] <3> isSame = %d\n", isSame);
             if (isSame != 0) {
                 wasSame = 1;
                 // printf("[compareFile] <3> Same!!\n");
                 if (isSame == -1) {
-                    printf("[compareFile] <3> fl->next->path(%s)\n", fl->next->path);
-                    printf("[compareFile] <3> data(%p) data->next(%p)\n", data, data->next);
-                    printf("[compareFile] <3> data->path(%s)\n", data->path);
+                    // printf("[compareFile] <3> fl->next->path(%s)\n", fl->next->path);
+                    // printf("[compareFile] <3> data(%p) data->next(%p)\n", data, data->next);
+                    // printf("[compareFile] <3> data->path(%s)\n", data->path);
                     appendData(&data->next, fl->next->path);
-                    printf("[compareFile] <3> fl->next->path: %s\n", fl->next->path);
+                    // printf("[compareFile] <3> fl->next->path: %s\n", fl->next->path);
                 }
                 appendData(&data->next, curr_file->path);
                 // printf("[compareFile] <3> curr_file->path: %s\n", curr_file->path);
@@ -367,19 +367,19 @@ void compareFile(fileList * fl, Data * data) {
 void * travel (void * arg) {
     subtask * s = (subtask *) arg ;
 
-    printf("[travel] s->fl_head (%p)\n", s->fl_head);
+    // printf("[travel] s->fl_head (%p)\n", s->fl_head);
     // compareFile(&f_head, &d_head);
     
     compareFile(s->fl_head, s->d_head);
 
-    printf("[travel] end compareFile\n");
+    // printf("[travel] end compareFile\n");
     // s --> global
-    printf("[travel] before s-->global\n\t fl_head.next (%p)\n\t data_head.next (%p)\n", fl_head.next, data_head.next);
+    // printf("[travel] before s-->global\n\t fl_head.next (%p)\n\t data_head.next (%p)\n", fl_head.next, data_head.next);
     pthread_mutex_lock(&lock) ;
     fl_head.next = s->fl_head;
     data_head.next = s->d_head;
     pthread_mutex_unlock(&lock) ;
-    printf("[travel] after s-->global\n\t fl_head.next (%p)\n\t data_head.next (%p)\n", fl_head.next, data_head.next);
+    // printf("[travel] after s-->global\n\t fl_head.next (%p)\n\t data_head.next (%p)\n", fl_head.next, data_head.next);
 
     free(arg);
     return NULL;
@@ -389,17 +389,17 @@ void * worker (void * arg)
 {
     subtask * s;
     while((s = get_subtask())) {
-        printf("[worker] s->fl_head (%p)\n", s->fl_head);
+        // printf("[worker] s->fl_head (%p)\n", s->fl_head);
         travel(s);
-        printf("[worker] end travel\n");
+        // printf("[worker] end travel\n");
     }
-    printf("[worker] end while\n");
+    // printf("[worker] end while\n");
     return NULL;
 }
 
 void init_subtask() {
     // for(int i = 0; i < thread_num; i++) {
-        printf("[init_subtask] &fl_head (%p)\n", &fl_head);
+        // printf("[init_subtask] &fl_head (%p)\n", &fl_head);
         subtask * s = (subtask *)malloc(sizeof(subtask)) ;
         s->fl_head = (fileList*)malloc(sizeof(fileList)) ;
         s->d_head = (Data*)malloc(sizeof(Data));
@@ -412,16 +412,16 @@ void init_subtask() {
             itr = itr->next;
         }
         
-        printf("[init_subtask] s->f_h(%p) s(%p) s->f_h->n(%p)\n", s->fl_head, s, s->fl_head->next);
-        printf("[init_subtask] s->f_h->n->p(%s)\n", s->fl_head->next->path);
-        printf("[init_subtask] s->d_h(%p) s->d_h->n(%p)\n", s->d_head, s->d_head->next);
+        // printf("[init_subtask] s->f_h(%p) s(%p) s->f_h->n(%p)\n", s->fl_head, s, s->fl_head->next);
+        // printf("[init_subtask] s->f_h->n->p(%s)\n", s->fl_head->next->path);
+        // printf("[init_subtask] s->d_h(%p) s->d_h->n(%p)\n", s->d_head, s->d_head->next);
         put_subtask(s);
     // }
 }
 
 int main(int argc, char* argv[])
 {
-    printf("[[main]] fl_head (%p)\tdata_head (%p)\n", &fl_head, &data_head);
+    // printf("[[main]] fl_head (%p)\tdata_head (%p)\n", &fl_head, &data_head);
     int i;
     thread_num = 16;
     minimum_size = 1024;
@@ -483,9 +483,9 @@ int main(int argc, char* argv[])
     }
     for (i = 0 ; i < thread_num ; i++) {
         pthread_mutex_lock(&lock_n_threads) ;
-        printf("[[main]] before join\n");
+        // printf("[[main]] before join\n");
 		pthread_join(threads[i], NULL) ;
-        printf("[[main]] after join\n");
+        // printf("[[main]] after join\n");
 	    pthread_mutex_unlock(&lock_n_threads) ;
     }
 
