@@ -9,8 +9,8 @@ Operating System HW4
 ## 1. Project Description & List of functions definitions
 Our goal for this project was to design  and  construct **findeq**, a multithreaded program that finds groups of equal files. 
 Using findeq, the users can count how much memory space is  wasted by redundant files and identify chances of saving up  storage spaces by removing redundant files.   
-Findeq must use multithreading to parallelize the search to find as many identical  files as possible with given computation time and resource. 
-
+Findeq must use multithreading to parallelize the search to find as many identical  files as possible with given computation time and resource.  
+Findeq must also produces the output promptly when it receives the SIGINT signal (i.e., when user presses CTRL+C), or the file search  terminates. findeq prints the list of the filepath lists such that  each filepath list enumerates all relative paths of the files having the exact same content, as discovered so far.
 
 ```
 put_subtask(subtask *s)
