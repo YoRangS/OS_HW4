@@ -197,10 +197,12 @@ void data2File(Data* head, char* name) {
             } 
         }
         else {
-            fprintf(newFile, "    %s", curr_data->path);
-            if (!(curr_data->next == 0x0 || strcmp(curr_data->next->path, "<>") == 0))
-                fprintf(newFile, ",");
-            fprintf(newFile, "\n");
+            if(strcmp(curr_data->path, "") != 0) {
+                fprintf(newFile, "    %s", curr_data->path);
+                if (!(curr_data->next == 0x0 || strcmp(curr_data->next->path, "<>") == 0))
+                    fprintf(newFile, ",");
+                fprintf(newFile, "\n");
+            }
         }
         curr_data = curr_data->next;
     }
@@ -478,6 +480,8 @@ int main(int argc, char* argv[])
 		// if (i != 0) put_subtask(NULL) ;
 		put_subtask(NULL) ;
         // init_subtask();
+    }
+    for (i = 0 ; i < thread_num ; i++) {
         pthread_mutex_lock(&lock_n_threads) ;
         printf("[[main]] before join\n");
 		pthread_join(threads[i], NULL) ;
