@@ -91,29 +91,39 @@ This function is responsible for initializing the necessary semaphores, mutexes,
 
 ## 2. Usage & Process to run
 ```
-./findeq ./File
+gcc -pthread findeq.c -o findeq
+```
+First of all, compile the findeq.c with -pthread .
+
+```
+./findeq .File
 ```
 findeq takes inputs as command-line arguments. The usage of findeq is as follows: 
 Basically,  findeq  receives  a path  to  a  target  directory  DIR. 
+If you want to test a different testcase directory in the current directory (directory containing findeq.c), you can use '.' instead of './File'.
 
 ```
 ./findeq -m=1200 ./File
 ```
 Ignores all files whose size is less than NUM bytes 
-from the search. The default value is 1024. 
+from the search. The default value is 1024.
+If the 'File' directory is a test case, the size of the 'A' files is smaller than 1200 bytes, and the size of the 'B' files is larger than 1200 bytes, so if the m option is 1200, different results can be seen.
 
 ```
 ./findeq -o=new ./File
 ```
-Produces  to  the  output  to  FILE.  By default,  the 
-output must be printed to the standard output. 
+Produces to the output to FILE. 
+By default, the output must be printed to the standard output. 
+
 ```
-./findeq -o=new2 -m=1200 ./File
+./findeq -t=32 ./File
 ```
+The t option allows input from 1 to 64, which specifies the number of threads to be used to run the program.
 
 ## 3. Issues & Limitations
 We seem to encounter a big performance lag in the single-threading and multi-threading. It seems to take alot more of time in the multi-thread as compared to a single-thread.  
 Also, input validation must be highly kept. We are assuming that the input values for thread_num, minimum_size, file_name, and dir_path are valid and within acceptable ranges. Without it, it may lead to unexpected behavior or crashes if invalid inputs are provided.
+The progress should be displayed every 5 seconds, but if the file search is delayed, the progress display will also be delayed. This is because the function that prints the progress is checked and executed for more than 5 seconds at the end of the file search function.
 
 ## 4. Contact Information
 21900673 Jung Eunchong (21900673@handong.ac.kr)  
